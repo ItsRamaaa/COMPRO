@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import MenuSection from './components/MenuSection'; 
@@ -15,9 +15,39 @@ import ReservasiPage from './components/Reservasi/ReservasiPage';
 import CeritaPage from './components/Cerita/CeritaPage';
 import WisataPage from './components/Wisata/WisataPage';
 import KontakPage from './components/Kontak/KontakPage';
+import AdminLayout from './admin/AdminLayout';
+import AdminLogin from './admin/AdminLogin';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+
+  // Cek otomatis kalau URL ada parameter ?admin=true
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('admin') === 'true') {
+      setCurrentPage('admin');
+    }
+  }, []);
+
+  // Percabangan khusus Admin (hanya admin yang butuh login)
+  if (currentPage === 'admin') {
+    if (!isAdminLoggedIn) {
+      return (
+        <AdminLogin 
+          onLoginSuccess={() => setIsAdminLoggedIn(true)} 
+          setCurrentPage={setCurrentPage} 
+        />
+      );
+    }
+    return <AdminLayout setCurrentPage={(page) => {
+      if (page === 'home') {
+        setIsAdminLoggedIn(false);
+        window.history.replaceState({}, '', window.location.pathname); // Bersihkan URL query
+      }
+      setCurrentPage(page);
+    }} />;
+  }
 
   return (
     <div className="min-h-screen bg-[#F9F8F6] font-['Plus_Jakarta_Sans',sans-serif]">
@@ -48,12 +78,10 @@ export default function App() {
         <HantaranCheckout setCurrentPage={setCurrentPage} />
       )}
 
-      {/* Ini halaman struk sukses setelah kirim pesanan */}
       {currentPage === 'order-success' && (
         <OrderSuccess setCurrentPage={setCurrentPage} />
       )}
 
-      {/* Ini halaman cek status pesanan yang muncul pas user klik tombol di bawah struk */}
       {currentPage === 'order-status-page' && (
         <OrderStatusPage setCurrentPage={setCurrentPage} />
       )}
